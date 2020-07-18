@@ -14,6 +14,7 @@ import android.widget.TextView;
 import java.util.ArrayList;
 import java.util.List;
 
+import br.com.guilhermedellatin.pirataflix.model.Category;
 import br.com.guilhermedellatin.pirataflix.model.Movie;
 
 public class MainActivity extends AppCompatActivity {
@@ -27,14 +28,22 @@ public class MainActivity extends AppCompatActivity {
 
         RecyclerView recyclerView = findViewById(R.id.recycler_view_main);
 
-        List<Movie> movies = new ArrayList<>();
-        for (int i = 0; i < 30; i++){
-            Movie movie = new Movie();
-            movie.setCoverUrl(R.drawable.movie);
-            movies.add(movie);
+        List<Category> categories = new ArrayList<>();
+        for (int j = 0; j < 10; j++) {
+            Category category = new Category();
+            category.setName("cat" + j);
+
+            List<Movie> movies = new ArrayList<>();
+            for (int i = 0; i < 30; i++) {
+                Movie movie = new Movie();
+                movie.setCoverUrl(R.drawable.movie);
+                movies.add(movie);
+            }
+            category.setMovies(movies);
+            categories.add(category);
         }
 
-        mainAdapter = new MainAdapter(movies);
+        mainAdapter = new MainAdapter(categories);
         recyclerView.setLayoutManager(new LinearLayoutManager(this, RecyclerView.VERTICAL, false));//Formato que a recycler vai trabalhar
         recyclerView.setAdapter(mainAdapter); //O cara que vai gerenciar minha recycler view é esse adapter
 
@@ -50,11 +59,51 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private class MainAdapter extends RecyclerView.Adapter<MovieHolder>{
+    private static class CategoryHolder extends RecyclerView.ViewHolder{
+        TextView textViewTitle;
+        RecyclerView recyclerViewMovie;
+
+        public CategoryHolder(@NonNull View itemView) {
+            super(itemView);
+            textViewTitle = itemView.findViewById(R.id.text_view_title);
+            recyclerViewMovie = itemView.findViewById(R.id.recycler_view_movie);
+        }
+    }
+
+    private class MainAdapter extends RecyclerView.Adapter<CategoryHolder>{
+
+        private final List<Category> categories;
+
+        private MainAdapter(List<Category> categories) {
+            this.categories = categories;
+        }
+
+        @NonNull
+        @Override
+        public CategoryHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) { //Qual que é o layout xml que ele vai manipular, espera um ItemView
+            return new CategoryHolder(getLayoutInflater().inflate(R.layout.category_item, parent, false));
+        }
+
+        @Override
+        public void onBindViewHolder(@NonNull CategoryHolder holder, int position) {//Sempre devolve um ViewHolder e a posição desse item
+            Category category = categories.get(position);
+            holder.textViewTitle.setText(category.getName());
+            holder.recyclerViewMovie.setAdapter(new MovieAdapter(category.getMovies()));
+            holder.recyclerViewMovie.setLayoutManager(new LinearLayoutManager(getBaseContext(), RecyclerView.HORIZONTAL, false));
+        }
+
+        @Override
+        public int getItemCount() { //Qual a quantidade de itens dessa coleção
+            return categories.size();
+        }
+    }
+
+
+    private class MovieAdapter extends RecyclerView.Adapter<MovieHolder>{
 
         private final List<Movie> movies;
 
-        private MainAdapter(List<Movie> movies) {
+        private MovieAdapter(List<Movie> movies) {
             this.movies = movies;
         }
 
