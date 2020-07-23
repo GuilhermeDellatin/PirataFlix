@@ -16,6 +16,7 @@ import java.util.List;
 
 import br.com.guilhermedellatin.pirataflix.model.Category;
 import br.com.guilhermedellatin.pirataflix.model.Movie;
+import br.com.guilhermedellatin.pirataflix.util.JsonDownloadTask;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -46,6 +47,8 @@ public class MainActivity extends AppCompatActivity {
         mainAdapter = new MainAdapter(categories);
         recyclerView.setLayoutManager(new LinearLayoutManager(this, RecyclerView.VERTICAL, false));//Formato que a recycler vai trabalhar
         recyclerView.setAdapter(mainAdapter); //O cara que vai gerenciar minha recycler view é esse adapter
+
+        new JsonDownloadTask(this).execute("https://tiagoaguiar.co/api/netflix/home");
 
     }
 
