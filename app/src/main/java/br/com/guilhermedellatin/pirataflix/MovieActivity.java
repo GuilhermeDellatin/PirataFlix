@@ -91,7 +91,7 @@ public class MovieActivity extends AppCompatActivity {
         @NonNull
         @Override
         public MovieHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) { //Qual que é o layout xml que ele vai manipular, espera um ItemView
-            return new MovieHolder(getLayoutInflater().inflate(R.layout.movie_item, parent, false));
+            return new MovieHolder(getLayoutInflater().inflate(R.layout.movie_item_similar, parent, false));
         }
 
         @Override
