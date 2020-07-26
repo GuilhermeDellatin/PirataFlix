@@ -23,16 +23,22 @@ import java.util.List;
 
 import javax.net.ssl.HttpsURLConnection;
 
+import br.com.guilhermedellatin.pirataflix.MainActivity;
 import br.com.guilhermedellatin.pirataflix.model.Category;
 import br.com.guilhermedellatin.pirataflix.model.Movie;
 
-public class JsonDownloadTask extends AsyncTask<String, Void, List<Category>> {
+public class CategoryTask extends AsyncTask<String, Void, List<Category>> {
 
     private final WeakReference<Context> context;
     private ProgressDialog dialog;
+    private CategoryLoader categoryLoader;
 
-    public JsonDownloadTask(Context context){
+    public CategoryTask(Context context){
         this.context = new WeakReference<>(context);
+    }
+
+    public void setCategoryLoader(CategoryLoader categoryLoader) {
+        this.categoryLoader = categoryLoader;
     }
 
     //main-thread
@@ -119,8 +125,10 @@ public class JsonDownloadTask extends AsyncTask<String, Void, List<Category>> {
     protected void onPostExecute(List<Category> categories) {
         super.onPostExecute(categories);
         dialog.dismiss();
-
         //listener
+        if (categoryLoader != null){
+            categoryLoader.onResult(categories);
+        }
     }
 
     private String toString(InputStream is) throws IOException{
@@ -132,4 +140,9 @@ public class JsonDownloadTask extends AsyncTask<String, Void, List<Category>> {
         }
         return new String(baos.toByteArray());
     }
+
+    public interface CategoryLoader {
+        void onResult(List<Category> categories);
+    }
+
 }

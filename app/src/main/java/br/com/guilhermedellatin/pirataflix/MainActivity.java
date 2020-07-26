@@ -16,9 +16,11 @@ import java.util.List;
 
 import br.com.guilhermedellatin.pirataflix.model.Category;
 import br.com.guilhermedellatin.pirataflix.model.Movie;
-import br.com.guilhermedellatin.pirataflix.util.JsonDownloadTask;
+import br.com.guilhermedellatin.pirataflix.util.CategoryTask;
+import br.com.guilhermedellatin.pirataflix.util.ImageDownloaderTask;
 
-public class MainActivity extends AppCompatActivity {
+
+public class MainActivity extends AppCompatActivity implements CategoryTask.CategoryLoader {
 
     private MainAdapter mainAdapter;
 
@@ -30,26 +32,21 @@ public class MainActivity extends AppCompatActivity {
         RecyclerView recyclerView = findViewById(R.id.recycler_view_main);
 
         List<Category> categories = new ArrayList<>();
-        for (int j = 0; j < 10; j++) {
-            Category category = new Category();
-            category.setName("cat" + j);
-
-            List<Movie> movies = new ArrayList<>();
-            for (int i = 0; i < 30; i++) {
-                Movie movie = new Movie();
-                //movie.setCoverUrl(R.drawable.movie);
-                movies.add(movie);
-            }
-            category.setMovies(movies);
-            categories.add(category);
-        }
 
         mainAdapter = new MainAdapter(categories);
         recyclerView.setLayoutManager(new LinearLayoutManager(this, RecyclerView.VERTICAL, false));//Formato que a recycler vai trabalhar
         recyclerView.setAdapter(mainAdapter); //O cara que vai gerenciar minha recycler view é esse adapter
 
-        new JsonDownloadTask(this).execute("https://tiagoaguiar.co/api/netflix/home");
+        CategoryTask categoryTask = new CategoryTask(this);
+        categoryTask.setCategoryLoader(this);
+        categoryTask.execute("https://tiagoaguiar.co/api/netflix/home");
 
+    }
+
+    @Override
+    public void onResult(List<Category> categories) {
+        mainAdapter.setCategories(categories);
+        mainAdapter.notifyDataSetChanged();
     }
 
     private static class MovieHolder extends RecyclerView.ViewHolder{
@@ -75,7 +72,7 @@ public class MainActivity extends AppCompatActivity {
 
     private class MainAdapter extends RecyclerView.Adapter<CategoryHolder>{
 
-        private final List<Category> categories;
+        private List<Category> categories;
 
         private MainAdapter(List<Category> categories) {
             this.categories = categories;
@@ -99,6 +96,11 @@ public class MainActivity extends AppCompatActivity {
         public int getItemCount() { //Qual a quantidade de itens dessa coleção
             return categories.size();
         }
+
+        void setCategories(List<Category> categories) {
+            this.categories.clear();
+            this.categories.addAll(categories);
+        }
     }
 
 
@@ -120,6 +122,7 @@ public class MainActivity extends AppCompatActivity {
         public void onBindViewHolder(@NonNull MovieHolder holder, int position) {//Sempre devolve um ViewHolder e a posição desse item
             Movie movie = movies.get(position);
             //holder.imageViewCover.setImageResource(movie.getCoverUrl());
+            new ImageDownloaderTask(holder.imageViewCover).execute(movie.getCoverUrl());
         }
 
         @Override
