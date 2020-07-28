@@ -4,9 +4,6 @@ import android.app.ProgressDialog;
 import android.content.Context;
 import android.os.AsyncTask;
 
-
-import androidx.core.content.ContextCompat;
-
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -23,36 +20,34 @@ import java.util.List;
 
 import javax.net.ssl.HttpsURLConnection;
 
-import br.com.guilhermedellatin.pirataflix.MainActivity;
 import br.com.guilhermedellatin.pirataflix.model.Category;
 import br.com.guilhermedellatin.pirataflix.model.Movie;
+import br.com.guilhermedellatin.pirataflix.model.MovieDetail;
 
-public class CategoryTask extends AsyncTask<String, Void, List<Category>> {
+public class MovieDetailTask extends AsyncTask<String, Void, MovieDetail> {
 
     private final WeakReference<Context> context;
+    private MovieDetailLoader movieDetailLoader;
     private ProgressDialog dialog;
-    private CategoryLoader categoryLoader;
 
-    public CategoryTask(Context context){
+    public MovieDetailTask(Context context) {
         this.context = new WeakReference<>(context);
     }
-
-    public void setCategoryLoader(CategoryLoader categoryLoader) {
-        this.categoryLoader = categoryLoader;
+    
+    public void setMovieDetailLoader(MovieDetailLoader movieDetailLoader) {
+        this.movieDetailLoader = movieDetailLoader;
     }
 
-    //main-thread
     @Override
     protected void onPreExecute() {
         super.onPreExecute();
         Context context = this.context.get();
 
-        if(context != null) dialog = ProgressDialog.show(context, "Carregando", "", true);
+        if (context != null) dialog = ProgressDialog.show(context, "Carregando", "", true);
     }
 
-    //Vai ser executado paralelamente -> thread background
     @Override
-    protected List<Category> doInBackground(String... params) {
+    protected MovieDetail doInBackground(String... params) {
         String url = params[0];
 
         try {
@@ -73,11 +68,11 @@ public class CategoryTask extends AsyncTask<String, Void, List<Category>> {
 
             String jsonAsString = toString(in);
 
-            List<Category> categories = getCategories(new JSONObject(jsonAsString));
+            MovieDetail movieDetail = getMovieDetail(new JSONObject(jsonAsString));
 
             in.close();
 
-            return categories;
+            return movieDetail;
 
         }catch (MalformedURLException e){
             e.printStackTrace();
@@ -86,50 +81,46 @@ public class CategoryTask extends AsyncTask<String, Void, List<Category>> {
         } catch (JSONException e) {
             e.printStackTrace();
         }
-
         return null;
     }
 
-    private List<Category> getCategories(JSONObject jsonObject) throws JSONException {
-        List<Category> categories = new ArrayList<>();
+    private MovieDetail getMovieDetail(JSONObject json) throws JSONException {
+        int id = json.getInt("id");
+        String title = json.getString("title");
+        String desc = json.getString("desc");
+        String cast = json.getString("cast");
+        String coverUrl = json.getString("cover_url");
 
-        JSONArray categoryArray = jsonObject.getJSONArray("category");
-        for (int i = 0; i < categoryArray.length(); i++){
-            JSONObject category =  categoryArray.getJSONObject(i);
-            String title = category.getString("title");
+        List<Movie> movies = new ArrayList<>();
+        JSONArray movieArray = json.getJSONArray("movie");
+        for (int i = 0; i < movieArray.length(); i++) {
+            JSONObject movie = movieArray.getJSONObject(i);
+            String c = movie.getString("cover_url");
+            int idSimilar = movie.getInt("id");
 
-            List<Movie> movies = new ArrayList<>();
-            JSONArray movieArray = category.getJSONArray("movie");
-            for (int j = 0; j < movieArray.length(); j++){
-                JSONObject movie = movieArray.getJSONObject(j);
-                String coverUrl = movie.getString("cover_url");
-                int id = movie.getInt("id");
+            Movie similar = new Movie();
+            similar.setId((idSimilar));
+            similar.setCoverUrl(c);
 
-                Movie movieObj = new Movie();
-                movieObj.setCoverUrl(coverUrl);
-                movieObj.setId(id);
-                movies.add(movieObj);
-            }
-
-            Category categoryObj = new Category();
-            categoryObj.setName(title);
-            categoryObj.setMovies(movies);
-
-            categories.add(categoryObj);
-
+            movies.add(similar);
         }
 
-        return categories;
+        Movie movie = new Movie();
+        movie.setId(id);
+        movie.setCoverUrl(coverUrl);
+        movie.setDesc(desc);
+        movie.setCast(cast);
+
+        return new MovieDetail(movie, movies);
     }
 
-    //main-thread
     @Override
-    protected void onPostExecute(List<Category> categories) {
-        super.onPostExecute(categories);
+    protected void onPostExecute(MovieDetail movieDetail) {
+        super.onPostExecute(movieDetail);
         dialog.dismiss();
-        //listener
-        if (categoryLoader != null){
-            categoryLoader.onResult(categories);
+
+        if (movieDetailLoader != null){
+            movieDetailLoader.onResult(movieDetail);
         }
     }
 
@@ -143,8 +134,8 @@ public class CategoryTask extends AsyncTask<String, Void, List<Category>> {
         return new String(baos.toByteArray());
     }
 
-    public interface CategoryLoader {
-        void onResult(List<Category> categories);
+    public interface MovieDetailLoader {
+        void onResult(MovieDetail movieDetail);
     }
 
 }
